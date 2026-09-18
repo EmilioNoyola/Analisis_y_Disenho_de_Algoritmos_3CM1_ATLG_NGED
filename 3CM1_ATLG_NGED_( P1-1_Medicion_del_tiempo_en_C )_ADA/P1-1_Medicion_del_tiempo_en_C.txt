@@ -1,3 +1,10 @@
+/* 
+    Práctica 1.1: Medición del tiempo en C
+    Alumnos: 
+     - Álvarez Tahuilán Luis Gustavo
+     - Noyola Gómez Emilio Damian
+    Fecha: 09 de septiembre de 2026
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

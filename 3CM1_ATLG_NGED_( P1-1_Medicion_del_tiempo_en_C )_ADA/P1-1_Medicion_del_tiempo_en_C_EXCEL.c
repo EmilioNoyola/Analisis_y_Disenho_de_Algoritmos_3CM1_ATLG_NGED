@@ -1,3 +1,10 @@
+/* 
+    Práctica 1.1: Medición del tiempo en C
+    Alumnos: 
+     - Álvarez Tahuilán Luis Gustavo
+     - Noyola Gómez Emilio Damian
+    Fecha: 09 de septiembre de 2026
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,17 +29,22 @@ int compararEnteros(const void *a, const void *b)
 }
 
 
-void selectionSort(int arreglo[], int n) {
-    for (int i = 0; i < n - 1; i++) {
+void selectionSort(int arreglo[], int n)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
         int posicionMenor = i;
 
-        for (int j = i + 1; j < n; j++) {
-            if (arreglo[j] < arreglo[posicionMenor]) {
+        for (int j = i + 1; j < n; j++)
+        {
+            if (arreglo[j] < arreglo[posicionMenor])
+            {
                 posicionMenor = j;
             }
         }
 
-        if (posicionMenor != i) {
+        if (posicionMenor != i)
+        {
             int auxiliar = arreglo[i];
             arreglo[i] = arreglo[posicionMenor];
             arreglo[posicionMenor] = auxiliar;
@@ -115,7 +127,7 @@ int estaOrdenado(const int arreglo[], int n)
 }
 
 
-void ejecutarPrueba(int arreglo[], int n, const char *condicion)
+double ejecutarPrueba(int arreglo[], int n, const char *condicion)
 {
     printf("\n----------------------------------------\n");
     printf("Tamano: %d\n", n);
@@ -133,6 +145,8 @@ void ejecutarPrueba(int arreglo[], int n, const char *condicion)
 
     printf("Tiempo: %.6f segundos\n", tiempo);
     printf("Ordenamiento correcto: %s\n", correcto ? "SI" : "NO");
+
+    return tiempo;
 }
 
 
@@ -155,9 +169,28 @@ int main(void)
 
     srand(12345);
 
+
+    /* Crear archivo compatible con Excel */
+    FILE *excel = fopen("resultados_selection_sort.csv", "w");
+
+    if (excel == NULL)
+    {
+        printf("Error al crear el archivo de resultados.\n");
+        return 1;
+    }
+
+
+    /* Encabezados */
+    fprintf(
+        excel,
+        "Tamano,Aleatorio (s),Inverso (s),Ordenado (s),Casi ordenado (s)\n"
+    );
+
+
     printf("========================================\n");
     printf("   SELECTION SORT - PRUEBAS DE TIEMPO\n");
     printf("========================================\n");
+
 
     for (int t = 0; t < NUM_TAMANOS; t++)
     {
@@ -167,9 +200,11 @@ int main(void)
         printf("        PRUEBAS PARA N = %d\n", n);
         printf("========================================\n");
 
+
         int *base = (int *)malloc((size_t)n * sizeof(int));
 
         int *trabajo = (int *)malloc((size_t)n * sizeof(int));
+
 
         if (base == NULL || trabajo == NULL)
         {
@@ -178,39 +213,112 @@ int main(void)
             free(base);
             free(trabajo);
 
+            fclose(excel);
+
             return 1;
         }
 
 
-        // Caso 1:
+        double tiempoAleatorio;
+        double tiempoInverso;
+        double tiempoOrdenado;
+        double tiempoCasiOrdenado;
+
+
+        // Caso 1: Aleatorio
         generarAleatorio(base, n);
-        memcpy(trabajo, base, (size_t)n * sizeof(int));
-        ejecutarPrueba(trabajo, n, "Aleatorio");
 
-        // Ordenar arreglo
-        qsort(base, n, sizeof(int), compararEnteros);
+        memcpy(
+            trabajo,
+            base,
+            (size_t)n * sizeof(int)
+        );
+
+        tiempoAleatorio =
+            ejecutarPrueba(trabajo, n, "Aleatorio");
 
 
-        // Caso 2:
-        memcpy(trabajo, base, (size_t)n * sizeof(int));
+        // Ordenar arreglo base
+        qsort(
+            base,
+            n,
+            sizeof(int),
+            compararEnteros
+        );
+
+
+        // Caso 2: Inverso
+        memcpy(
+            trabajo,
+            base,
+            (size_t)n * sizeof(int)
+        );
+
         invertirArreglo(trabajo, n);
-        ejecutarPrueba(trabajo, n, "Inverso");
+
+        tiempoInverso =
+            ejecutarPrueba(trabajo, n, "Inverso");
 
 
-        // Caso 3:
-        memcpy(trabajo, base, (size_t)n * sizeof(int));
-        ejecutarPrueba(trabajo, n, "Ordenado");
+        // Caso 3: Ordenado
+        memcpy(
+            trabajo,
+            base,
+            (size_t)n * sizeof(int)
+        );
+
+        tiempoOrdenado =
+            ejecutarPrueba(trabajo, n, "Ordenado");
 
 
-        // Caso 4:
-        memcpy(trabajo, base, (size_t)n * sizeof(int));
+        // Caso 4: Casi ordenado
+        memcpy(
+            trabajo,
+            base,
+            (size_t)n * sizeof(int)
+        );
+
         casiOrdenar(trabajo, n);
-        ejecutarPrueba(trabajo, n, "Casi ordenado");
+
+        tiempoCasiOrdenado =
+            ejecutarPrueba(trabajo, n, "Casi ordenado");
+
+
+        /* Guardar una fila en el archivo */
+        fprintf(
+            excel,
+            "%d,%.6f,%.6f,%.6f,%.6f\n",
+            n,
+            tiempoAleatorio,
+            tiempoInverso,
+            tiempoOrdenado,
+            tiempoCasiOrdenado
+        );
+
+
+        /*
+           Guardar inmediatamente los resultados.
+           Esto es util porque las pruebas grandes
+           pueden tardar bastante.
+        */
+        fflush(excel);
 
 
         free(base);
         free(trabajo);
     }
+
+
+    fclose(excel);
+
+
+    printf("\n\n========================================\n");
+    printf("       EXPERIMENTO TERMINADO\n");
+    printf("========================================\n");
+
+    printf("\nResultados guardados en:\n");
+    printf("resultados_selection_sort.csv\n");
+
 
     return 0;
 }
