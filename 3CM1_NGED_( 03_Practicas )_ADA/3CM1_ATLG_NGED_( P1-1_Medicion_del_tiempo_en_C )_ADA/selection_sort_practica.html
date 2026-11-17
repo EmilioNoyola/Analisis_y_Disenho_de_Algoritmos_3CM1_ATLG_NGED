@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Selection Sort · Práctica de análisis de algoritmos</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: rgba(15, 28, 46, .88);
+      --panel-2: rgba(20, 38, 61, .78);
+      --line: rgba(148, 163, 184, .18);
+      --text: #eef5ff;
+      --muted: #9fb1c8;
+      --accent: #6ee7f9;
+      --accent-2: #8b5cf6;
+      --good: #34d399;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+      --bar: #60a5fa;
+      --bar-current: #fbbf24;
+      --bar-min: #34d399;
+      --bar-placed: #a78bfa;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .32);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(139, 92, 246, .18), transparent 28%),
+        radial-gradient(circle at 88% 12%, rgba(34, 211, 238, .12), transparent 30%),
+        linear-gradient(180deg, #06101d 0%, #091522 48%, #07111f 100%);
+    }
+
+    button, input, select { font: inherit; }
+
+    .shell {
+      width: min(1480px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 34px 0 64px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      padding: 38px;
+      background: linear-gradient(135deg, rgba(15, 29, 49, .96), rgba(10, 24, 41, .84));
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      right: -120px;
+      top: -160px;
+      background: radial-gradient(circle, rgba(110, 231, 249, .22), transparent 66%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border: 1px solid rgba(110, 231, 249, .22);
+      border-radius: 999px;
+      background: rgba(110, 231, 249, .07);
+      color: #c8f8ff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      margin: 16px 0 12px;
+      max-width: 920px;
+      font-size: clamp(32px, 5vw, 64px);
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 900px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+
+    .hero-meta {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.035);
+      color: #cbd9ea;
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    .panel-header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .panel-body { padding: 24px; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .control {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(255,255,255,.025);
+    }
+
+    .control label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #d8e4f2;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .control output { color: var(--accent); }
+
+    input[type="range"] { width: 100%; accent-color: #60a5fa; }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); border-color: rgba(110,231,249,.35); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .btn.primary { background: linear-gradient(135deg, #2563eb, #7c3aed); border-color: transparent; }
+    .btn.success { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.25); color: #b8f7dd; }
+    .btn.danger { background: rgba(251,113,133,.10); border-color: rgba(251,113,133,.22); color: #fecdd3; }
+
+    .visual-stage {
+      height: 330px;
+      display: flex;
+      align-items: end;
+      gap: 5px;
+      padding: 18px 14px 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+        rgba(3, 11, 21, .45);
+      background-size: 32px 32px;
+      overflow: hidden;
+    }
+
+    .bar {
+      flex: 1 1 0;
+      min-width: 2px;
+      border-radius: 7px 7px 2px 2px;
+      background: linear-gradient(180deg, #93c5fd, var(--bar));
+      transition: height .16s ease, background .16s ease, filter .16s ease, opacity .16s ease;
+      position: relative;
+    }
+
+    .bar.current { background: linear-gradient(180deg, #fde68a, var(--bar-current)); }
+    .bar.minimum { background: linear-gradient(180deg, #a7f3d0, var(--bar-min)); }
+    .bar.placed { background: linear-gradient(180deg, #ddd6fe, var(--bar-placed)); opacity: .88; }
+
+    .demo-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .mini-stat {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.025);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .mini-stat span { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+    .mini-stat strong { display: block; margin-top: 5px; font-size: 18px; }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .dot { width: 9px; height: 9px; border-radius: 99px; background: var(--bar); }
+    .dot.current { background: var(--bar-current); }
+    .dot.minimum { background: var(--bar-min); }
+    .dot.placed { background: var(--bar-placed); }
+
+    .concept-card {
+      padding: 18px;
+      border: 1px solid rgba(139,92,246,.22);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(139,92,246,.08), rgba(37,99,235,.06));
+      margin-bottom: 16px;
+    }
+
+    .concept-card h3 { margin: 0 0 10px; font-size: 16px; }
+    .concept-card p, .concept-card li { color: var(--muted); line-height: 1.55; font-size: 13px; }
+    .concept-card ul { margin: 10px 0 0; padding-left: 18px; }
+
+    code.inline {
+      color: #d8f7ff;
+      background: rgba(110,231,249,.08);
+      border: 1px solid rgba(110,231,249,.12);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .benchmark-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 15px 16px;
+      border: 1px solid rgba(251,191,36,.22);
+      background: rgba(251,191,36,.07);
+      border-radius: 15px;
+      color: #fde7a4;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .warning strong { color: #fff1bd; }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 860px;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #0d1b2e;
+      color: #b7c8dc;
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    th:first-child, td:first-child, th:nth-child(2), td:nth-child(2), th:last-child, td:last-child { text-align: left; }
+    tr:last-child td { border-bottom: 0; }
+    tr.running { background: rgba(96,165,250,.06); }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .status.done { color: #b8f7dd; border-color: rgba(52,211,153,.22); background: rgba(52,211,153,.07); }
+    .status.running { color: #bfdbfe; border-color: rgba(96,165,250,.24); background: rgba(96,165,250,.08); }
+    .status.cancelled { color: #fecdd3; border-color: rgba(251,113,133,.22); background: rgba(251,113,133,.07); }
+
+    .size-check { accent-color: #60a5fa; width: 16px; height: 16px; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.025);
+      padding: 16px;
+    }
+
+    .summary-card span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .07em; }
+    .summary-card strong { display: block; margin-top: 8px; font-size: 21px; letter-spacing: -.02em; }
+
+    .chart-shell {
+      position: relative;
+      height: 360px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(3,11,21,.42);
+      overflow: hidden;
+    }
+
+    canvas { width: 100%; height: 100%; display: block; }
+
+    .codebox {
+      background: #050b13;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: auto;
+      max-height: 480px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 20px;
+      color: #c7d7ea;
+      font: 12.5px/1.7 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      tab-size: 4;
+    }
+
+    .footer {
+      text-align: center;
+      color: #71859e;
+      font-size: 12px;
+      padding: 26px 0 0;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .full { grid-column: auto; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 20px, 1480px); padding-top: 10px; }
+      .hero { padding: 24px; border-radius: 22px; }
+      .panel-header, .panel-body { padding-left: 16px; padding-right: 16px; }
+      .controls { grid-template-columns: 1fr; }
+      .demo-stats, .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .visual-stage { height: 260px; gap: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <span class="eyebrow">Análisis de algoritmos · JavaScript</span>
+      <h1>Selection Sort Lab</h1>
+      <p>
+        Visualiza el algoritmo de ordenamiento por selección paso a paso y ejecuta el benchmark del peor caso
+        con los tamaños requeridos en la práctica. La medición usa <strong>performance.now()</strong> y el benchmark
+        se ejecuta en un Web Worker para que la interfaz permanezca responsiva.
+      </p>
+      <div class="hero-meta">
+        <span class="pill">Complejidad temporal: O(n²)</span>
+        <span class="pill">Peor caso: arreglo inverso</span>
+        <span class="pill">Medición: milisegundos</span>
+        <span class="pill">Exportación: CSV</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <header class="panel-header">
+          <div>
+            <h2>Visualización paso a paso</h2>
+            <p>Modo didáctico para observar comparaciones, mínimo e intercambios.</p>
+          </div>
+        </header>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="control">
+              <label for="demoSize">Elementos <output id="demoSizeOut">18</output></label>
+              <input id="demoSize" type="range" min="6" max="40" value="18" />
+            </div>
+            <div class="control">
+              <label for="demoSpeed">Velocidad <output id="demoSpeedOut">180 ms</output></label>
+              <input id="demoSpeed" type="range" min="40" max="700" step="20" value="180" />
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button class="btn primary" id="demoStart">Iniciar</button>
+            <button class="btn" id="demoStep">Un paso</button>
+            <button class="btn" id="demoReset">Reiniciar</button>
+          </div>
+
+          <div class="visual-stage" id="visualStage" aria-label="Visualización del arreglo"></div>
+
+          <div class="demo-stats">
+            <div class="mini-stat"><span>Iteración externa</span><strong id="demoOuter">0</strong></div>
+            <div class="mini-stat"><span>Comparaciones</span><strong id="demoComparisons">0</strong></div>
+            <div class="mini-stat"><span>Intercambios</span><strong id="demoSwaps">0</strong></div>
+            <div class="mini-stat"><span>Estado</span><strong id="demoState">Listo</strong></div>
+          </div>
+
+          <div class="legend">
+            <span><i class="dot"></i> Normal</span>
+            <span><i class="dot current"></i> Comparando</span>
+            <span><i class="dot minimum"></i> Mínimo actual</span>
+            <span><i class="dot placed"></i> Ya colocado</span>
+          </div>
+        </div>
+      </article>
+
+      <aside class="panel">
+        <header class="panel-header">
+          <div>
+            <h2>Qué está midiendo la práctica</h2>
+            <p>Los puntos conceptuales que debes explicar.</p>
+          </div>
+        </header>
+        <div class="panel-body">
+          <div class="concept-card">
+            <h3>1. Entrada del peor caso</h3>
+            <p><code class="inline">setWorstCase()</code> genera <strong>n, n−1, ..., 1</strong>. El arreglo está completamente invertido antes de ordenar.</p>
+          </div>
+          <div class="concept-card">
+            <h3>2. Medición aislada</h3>
+            <p>La marca inicial se toma justo antes de <code class="inline">selectionSort()</code> y la final justo después. La construcción del arreglo no se incluye en el tiempo.</p>
+          </div>
+          <div class="concept-card">
+            <h3>3. performance.now()</h3>
+            <p>Devuelve una marca de tiempo de alta resolución en milisegundos. El tiempo experimental se obtiene con <code class="inline">fin - ini</code>.</p>
+          </div>
+          <div class="concept-card">
+            <h3>4. Crecimiento cuadrático</h3>
+            <p>Selection Sort realiza:</p>
+            <p style="font-size:20px;color:#eef5ff;margin:8px 0"><strong>n(n−1) / 2</strong> comparaciones.</p>
+            <ul>
+              <li>100 elementos → 4,950 comparaciones.</li>
+              <li>100,000 elementos → 4,999,950,000.</li>
+              <li>1,000,000 elementos → 499,999,500,000.</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+      <article class="panel full">
+        <header class="panel-header">
+          <div>
+            <h2>Benchmark de la práctica</h2>
+            <p>Ejecuta el algoritmo real sobre los tamaños solicitados y conserva los resultados para graficarlos.</p>
+          </div>
+        </header>
+        <div class="panel-body">
+          <div class="warning">
+            <div>⚠️</div>
+            <div>
+              <strong>Los últimos tamaños son deliberadamente extremos.</strong> Con 1,000,000 de elementos Selection Sort realiza casi 500 mil millones de comparaciones. La página seguirá respondiendo porque el cálculo corre en un Worker, pero esa prueba puede tardar mucho según el equipo y el navegador.
+            </div>
+          </div>
+
+          <div class="benchmark-toolbar">
+            <button class="btn primary" id="runSelected">Ejecutar seleccionados</button>
+            <button class="btn" id="selectSafe">Seleccionar hasta 15,000</button>
+            <button class="btn" id="selectAll">Seleccionar todos</button>
+            <button class="btn danger" id="cancelRun" disabled>Cancelar</button>
+            <button class="btn" id="clearResults">Limpiar resultados</button>
+            <button class="btn success" id="exportCsv">Exportar CSV</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usar</th>
+                  <th>Elementos (n)</th>
+                  <th>Comparaciones teóricas</th>
+                  <th>Tiempo (ms)</th>
+                  <th>Tiempo (s)</th>
+                  <th>Ordenado</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="benchmarkBody"></tbody>
+            </table>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-card"><span>Pruebas terminadas</span><strong id="sumCompleted">0 / 11</strong></div>
+            <div class="summary-card"><span>Mayor n completado</span><strong id="sumLargest">—</strong></div>
+            <div class="summary-card"><span>Tiempo acumulado</span><strong id="sumTime">0 ms</strong></div>
+            <div class="summary-card"><span>Último resultado</span><strong id="sumLast">—</strong></div>
+          </div>
+
+          <div class="chart-shell">
+            <canvas id="chartCanvas"></canvas>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel full">
+        <header class="panel-header">
+          <div>
+            <h2>Código base utilizado</h2>
+            <p>El núcleo del experimento conserva la estructura CArray y Selection Sort de la práctica.</p>
+          </div>
+        </header>
+        <div class="panel-body">
+          <div class="codebox"><pre id="codeView"></pre></div>
+        </div>
+      </article>
+    </section>
+
+    <div class="footer">Selection Sort Lab · práctica experimental de análisis de algoritmos</div>
+  </main>
+
+  <script>
+    const baseCode = `function CArray(numElements) {
+    this.dataStore = [];
+    this.pos = 0;
+    this.numElements = numElements;
+    this.insert = insert;
+    this.toString = toString;
+    this.clear = clear;
+    this.setData = setData;
+    this.setWorstCase = setWorstCase;
+    this.swap = swap;
+    this.selectionSort = selectionSort;
+
+    for (var i = 0; i < numElements; ++i) {
+        this.dataStore[i] = i;
+    }
+}
+
+function setData() {
+    for (var i = 0; i < this.numElements; ++i) {
+        this.dataStore[i] = Math.floor(
+            Math.random() * (this.numElements + 1)
+        );
+    }
+}
+
+function setWorstCase() {
+    for (var i = 0; i < this.numElements; ++i) {
+        this.dataStore[i] = this.numElements - i;
+    }
+}
+
+function clear() {
+    for (var i = 0; i < this.dataStore.length; ++i) {
+        this.dataStore[i] = 0;
+    }
+}
+
+function insert(element) {
+    this.dataStore[this.pos++] = element;
+}
+
+function toString() {
+    var retstr = "";
+
+    for (var i = 0; i < this.dataStore.length; ++i) {
+        retstr += this.dataStore[i] + " ";
+
+        if (i > 0 && i % 10 == 0) {
+            retstr += "\\n";
+        }
+    }
+
+    return retstr;
+}
+
+function swap(arr, index1, index2) {
+    var temp = arr[index1];
+    arr[index1] = arr[index2];
+    arr[index2] = temp;
+}
+
+function selectionSort() {
+    var min;
+
+    for (var outer = 0; outer < this.dataStore.length - 1; ++outer) {
+        min = outer;
+
+        for (var inner = outer + 1; inner < this.dataStore.length; ++inner) {
+            if (this.dataStore[inner] < this.dataStore[min]) {
+                min = inner;
+            }
+        }
+
+        if (min !== outer) {
+            this.swap(this.dataStore, outer, min);
+        }
+    }
+}`;
+
+    document.getElementById('codeView').textContent = baseCode;
+
+    const sizes = [100, 500, 1500, 5000, 10000, 15000, 50000, 100000, 250000, 500000, 1000000];
+    const results = new Map();
+    let benchmarkWorker = null;
+    let isRunning = false;
+
+    const fmtInt = n => new Intl.NumberFormat('es-MX').format(n);
+    const fmtMs = n => Number.isFinite(n) ? n.toLocaleString('es-MX', {maximumFractionDigits: 6}) : '—';
+    const comparisonsFor = n => n * (n - 1) / 2;
+
+    function renderBenchmarkRows() {
+      const body = document.getElementById('benchmarkBody');
+      body.innerHTML = '';
+      sizes.forEach((n, index) => {
+        const r = results.get(n) || {};
+        const tr = document.createElement('tr');
+        tr.dataset.n = n;
+        if (r.status === 'Ejecutando') tr.classList.add('running');
+        const checked = index <= 5 ? 'checked' : '';
+        tr.innerHTML = `
+          <td><input class="size-check" type="checkbox" data-size="${n}" ${r.checked === false ? '' : (r.checked === true ? 'checked' : checked)} ${isRunning ? 'disabled' : ''}></td>
+          <td><strong>${fmtInt(n)}</strong></td>
+          <td>${fmtInt(comparisonsFor(n))}</td>
+          <td>${r.ms != null ? fmtMs(r.ms) : '—'}</td>
+          <td>${r.ms != null ? (r.ms / 1000).toLocaleString('es-MX', {maximumFractionDigits: 6}) : '—'}</td>
+          <td>${r.sorted == null ? '—' : (r.sorted ? 'Sí' : 'No')}</td>
+          <td><span class="status ${r.status === 'Terminado' ? 'done' : r.status === 'Ejecutando' ? 'running' : r.status === 'Cancelado' ? 'cancelled' : ''}">${r.status || 'Pendiente'}</span></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function updateSummary() {
+      const completed = [...results.entries()].filter(([,r]) => r.status === 'Terminado');
+      const totalMs = completed.reduce((acc,[,r]) => acc + (r.ms || 0), 0);
+      const largest = completed.length ? Math.max(...completed.map(([n]) => n)) : null;
+      const last = completed.length ? completed[completed.length - 1] : null;
+      document.getElementById('sumCompleted').textContent = `${completed.length} / ${sizes.length}`;
+      document.getElementById('sumLargest').textContent = largest ? fmtInt(largest) : '—';
+      document.getElementById('sumTime').textContent = totalMs < 1000 ? `${fmtMs(totalMs)} ms` : `${(totalMs/1000).toLocaleString('es-MX',{maximumFractionDigits:3})} s`;
+      document.getElementById('sumLast').textContent = last ? `${fmtInt(last[0])}: ${fmtMs(last[1].ms)} ms` : '—';
+      drawChart();
+    }
+
+    function setRunningState(value) {
+      isRunning = value;
+      document.getElementById('runSelected').disabled = value;
+      document.getElementById('selectSafe').disabled = value;
+      document.getElementById('selectAll').disabled = value;
+      document.getElementById('clearResults').disabled = value;
+      document.getElementById('cancelRun').disabled = !value;
+      document.querySelectorAll('.size-check').forEach(cb => cb.disabled = value);
+    }
+
+    function getSelectedSizes() {
+      return [...document.querySelectorAll('.size-check:checked')].map(cb => Number(cb.dataset.size));
+    }
+
+    function buildWorker() {
+      const workerSource = `
+        function CArray(numElements) {
+          this.dataStore = [];
+          this.pos = 0;
+          this.numElements = numElements;
+          this.setWorstCase = setWorstCase;
+          this.swap = swap;
+          this.selectionSort = selectionSort;
+          for (var i = 0; i < numElements; ++i) this.dataStore[i] = i;
+        }
+        function setWorstCase() {
+          for (var i = 0; i < this.numElements; ++i) this.dataStore[i] = this.numElements - i;
+        }
+        function swap(arr, index1, index2) {
+          var temp = arr[index1]; arr[index1] = arr[index2]; arr[index2] = temp;
+        }
+        function selectionSort() {
+          var min;
+          for (var outer = 0; outer < this.dataStore.length - 1; ++outer) {
+            min = outer;
+            for (var inner = outer + 1; inner < this.dataStore.length; ++inner) {
+              if (this.dataStore[inner] < this.dataStore[min]) min = inner;
+            }
+            if (min !== outer) this.swap(this.dataStore, outer, min);
+          }
+        }
+        function isSorted(arr) {
+          for (var i = 1; i < arr.length; ++i) if (arr[i - 1] > arr[i]) return false;
+          return true;
+        }
+        self.onmessage = function(event) {
+          if (event.data.type !== 'run') return;
+          const list = event.data.sizes;
+          for (let k = 0; k < list.length; ++k) {
+            const n = list[k];
+            self.postMessage({type:'start', n});
+            const arreglo = new CArray(n);
+            arreglo.setWorstCase();
+            const ini = performance.now();
+            arreglo.selectionSort();
+            const fin = performance.now();
+            self.postMessage({type:'result', n, ms: fin - ini, sorted: isSorted(arreglo.dataStore)});
+          }
+          self.postMessage({type:'complete'});
+        };
+      `;
+      const blob = new Blob([workerSource], {type: 'application/javascript'});
+      return new Worker(URL.createObjectURL(blob));
+    }
+
+    async function runSelected() {
+      const selected = getSelectedSizes();
+      if (!selected.length) {
+        alert('Selecciona al menos un tamaño.');
+        return;
+      }
+      if (selected.some(n => n >= 250000)) {
+        const ok = confirm('Has seleccionado pruebas muy grandes. Selection Sort es O(n²) y pueden tardar bastante. La interfaz seguirá respondiendo. ¿Deseas continuar?');
+        if (!ok) return;
+      }
+
+      selected.forEach(n => {
+        const previous = results.get(n) || {};
+        results.set(n, {...previous, status: 'Pendiente'});
+      });
+      renderBenchmarkRows();
+      setRunningState(true);
+
+      benchmarkWorker = buildWorker();
+      benchmarkWorker.onmessage = event => {
+        const msg = event.data;
+        if (msg.type === 'start') {
+          const previous = results.get(msg.n) || {};
+          results.set(msg.n, {...previous, status: 'Ejecutando'});
+          renderBenchmarkRows();
+          setRunningState(true);
+        }
+        if (msg.type === 'result') {
+          results.set(msg.n, {ms: msg.ms, sorted: msg.sorted, status: 'Terminado'});
+          renderBenchmarkRows();
+          setRunningState(true);
+          updateSummary();
+        }
+        if (msg.type === 'complete') {
+          benchmarkWorker.terminate();
+          benchmarkWorker = null;
+          setRunningState(false);
+          renderBenchmarkRows();
+          updateSummary();
+        }
+      };
+      benchmarkWorker.onerror = err => {
+        console.error(err);
+        alert('Ocurrió un error en el benchmark. Revisa la consola del navegador.');
+        if (benchmarkWorker) benchmarkWorker.terminate();
+        benchmarkWorker = null;
+        setRunningState(false);
+        renderBenchmarkRows();
+      };
+      benchmarkWorker.postMessage({type:'run', sizes:selected});
+    }
+
+    function cancelBenchmark() {
+      if (!benchmarkWorker) return;
+      benchmarkWorker.terminate();
+      benchmarkWorker = null;
+      [...results.entries()].forEach(([n,r]) => {
+        if (r.status === 'Ejecutando' || r.status === 'Pendiente') results.set(n, {...r, status:'Cancelado'});
+      });
+      setRunningState(false);
+      renderBenchmarkRows();
+      updateSummary();
+    }
+
+    function selectPreset(type) {
+      document.querySelectorAll('.size-check').forEach(cb => {
+        const n = Number(cb.dataset.size);
+        cb.checked = type === 'all' ? true : n <= 15000;
+      });
+    }
+
+    function clearResults() {
+      results.clear();
+      renderBenchmarkRows();
+      updateSummary();
+    }
+
+    function exportCsv() {
+      const rows = [['Elementos','Comparaciones_teoricas','Tiempo_ms','Tiempo_s','Ordenado','Estado']];
+      sizes.forEach(n => {
+        const r = results.get(n) || {};
+        rows.push([
+          n,
+          comparisonsFor(n),
+          r.ms != null ? r.ms : '',
+          r.ms != null ? r.ms / 1000 : '',
+          r.sorted == null ? '' : (r.sorted ? 'SI' : 'NO'),
+          r.status || 'Pendiente'
+        ]);
+      });
+      const csv = rows.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'selection_sort_resultados.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById('chartCanvas');
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      const w = rect.width, h = rect.height;
+      ctx.clearRect(0,0,w,h);
+
+      const completed = sizes.map(n => ({n, ...(results.get(n)||{})})).filter(r => r.ms != null);
+      const pad = {l:70, r:24, t:28, b:55};
+      const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+
+      ctx.strokeStyle = 'rgba(148,163,184,.16)';
+      ctx.lineWidth = 1;
+      ctx.font = '11px system-ui';
+      ctx.fillStyle = '#8fa3bb';
+
+      for (let i=0;i<=5;i++) {
+        const y = pad.t + ph * i/5;
+        ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+      }
+
+      if (!completed.length) {
+        ctx.fillStyle = '#91a4ba';
+        ctx.font = '14px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('Los resultados aparecerán aquí conforme terminen las pruebas.', w/2, h/2);
+        return;
+      }
+
+      const maxMs = Math.max(...completed.map(r => r.ms), 1);
+      const xAt = index => pad.l + (completed.length === 1 ? pw/2 : pw * index/(completed.length-1));
+      const yAt = ms => pad.t + ph - (ms/maxMs)*ph;
+
+      ctx.textAlign = 'right';
+      for (let i=0;i<=5;i++) {
+        const value = maxMs * (5-i)/5;
+        const y = pad.t + ph * i/5;
+        ctx.fillText(value.toLocaleString('es-MX',{maximumFractionDigits:2}), pad.l-10, y+4);
+      }
+
+      ctx.textAlign = 'center';
+      completed.forEach((r,i) => {
+        ctx.fillText(fmtInt(r.n), xAt(i), h-26);
+      });
+
+      const grad = ctx.createLinearGradient(pad.l,0,w-pad.r,0);
+      grad.addColorStop(0,'#60a5fa');
+      grad.addColorStop(1,'#a78bfa');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      completed.forEach((r,i) => {
+        const x=xAt(i), y=yAt(r.ms);
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+
+      completed.forEach((r,i) => {
+        const x=xAt(i), y=yAt(r.ms);
+        ctx.fillStyle = '#dbeafe';
+        ctx.beginPath(); ctx.arc(x,y,4.5,0,Math.PI*2); ctx.fill();
+      });
+
+      ctx.fillStyle = '#b8c7d9';
+      ctx.font = '12px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('Tamaño del arreglo (n)', pad.l + pw/2, h-6);
+      ctx.save();
+      ctx.translate(18, pad.t + ph/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.fillText('Tiempo (ms)', 0, 0);
+      ctx.restore();
+    }
+
+    document.getElementById('runSelected').addEventListener('click', runSelected);
+    document.getElementById('cancelRun').addEventListener('click', cancelBenchmark);
+    document.getElementById('selectSafe').addEventListener('click', () => selectPreset('safe'));
+    document.getElementById('selectAll').addEventListener('click', () => selectPreset('all'));
+    document.getElementById('clearResults').addEventListener('click', clearResults);
+    document.getElementById('exportCsv').addEventListener('click', exportCsv);
+    window.addEventListener('resize', drawChart);
+
+    // ---------------------------
+    // DEMOSTRACIÓN VISUAL
+    // ---------------------------
+    const demoSize = document.getElementById('demoSize');
+    const demoSpeed = document.getElementById('demoSpeed');
+    const stage = document.getElementById('visualStage');
+    let demoArray = [];
+    let demoIterator = null;
+    let demoTimer = null;
+    let demoRunning = false;
+    let demoStats = {comparisons:0, swaps:0, outer:0};
+
+    function resetDemo() {
+      stopDemo();
+      const n = Number(demoSize.value);
+      demoArray = Array.from({length:n}, (_,i) => n-i);
+      demoIterator = selectionSortSteps(demoArray);
+      demoStats = {comparisons:0, swaps:0, outer:0};
+      updateDemoStats('Listo');
+      renderBars({current:-1,min:-1,placed:0});
+    }
+
+    function* selectionSortSteps(arr) {
+      let comparisons = 0, swaps = 0;
+      for (let outer=0; outer<arr.length-1; ++outer) {
+        let min = outer;
+        yield {type:'outer', outer, min, inner:-1, comparisons, swaps};
+        for (let inner=outer+1; inner<arr.length; ++inner) {
+          comparisons++;
+          if (arr[inner] < arr[min]) min = inner;
+          yield {type:'compare', outer, min, inner, comparisons, swaps};
+        }
+        if (min !== outer) {
+          const temp = arr[outer]; arr[outer] = arr[min]; arr[min] = temp;
+          swaps++;
+          yield {type:'swap', outer, min:outer, inner:min, comparisons, swaps};
+        }
+        yield {type:'placed', outer, min:outer, inner:-1, comparisons, swaps};
+      }
+      yield {type:'done', outer:arr.length-1, min:-1, inner:-1, comparisons, swaps};
+    }
+
+    function renderBars(state) {
+      stage.innerHTML = '';
+      const max = Math.max(...demoArray,1);
+      demoArray.forEach((value,index) => {
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.height = `${Math.max(5,(value/max)*100)}%`;
+        bar.title = String(value);
+        if (index < (state.placed || 0)) bar.classList.add('placed');
+        if (index === state.inner) bar.classList.add('current');
+        if (index === state.min) bar.classList.add('minimum');
+        stage.appendChild(bar);
+      });
+    }
+
+    function updateDemoStats(stateText) {
+      document.getElementById('demoOuter').textContent = demoStats.outer;
+      document.getElementById('demoComparisons').textContent = fmtInt(demoStats.comparisons);
+      document.getElementById('demoSwaps').textContent = fmtInt(demoStats.swaps);
+      document.getElementById('demoState').textContent = stateText;
+    }
+
+    function nextDemoStep() {
+      if (!demoIterator) resetDemo();
+      const next = demoIterator.next();
+      if (next.done) { stopDemo(); updateDemoStats('Terminado'); return false; }
+      const s = next.value;
+      demoStats = {comparisons:s.comparisons, swaps:s.swaps, outer:s.outer+1};
+      const placed = s.type === 'done' ? demoArray.length : (s.type === 'placed' ? s.outer+1 : s.outer);
+      renderBars({current:s.inner, min:s.min, placed});
+      updateDemoStats(s.type === 'compare' ? 'Comparando' : s.type === 'swap' ? 'Intercambio' : s.type === 'done' ? 'Terminado' : 'Buscando mínimo');
+      if (s.type === 'done') { stopDemo(); return false; }
+      return true;
+    }
+
+    function startDemo() {
+      if (demoRunning) { stopDemo(); return; }
+      demoRunning = true;
+      document.getElementById('demoStart').textContent = 'Pausar';
+      const tick = () => {
+        if (!demoRunning) return;
+        if (!nextDemoStep()) return;
+        demoTimer = setTimeout(tick, Number(demoSpeed.value));
+      };
+      tick();
+    }
+
+    function stopDemo() {
+      demoRunning = false;
+      clearTimeout(demoTimer);
+      demoTimer = null;
+      document.getElementById('demoStart').textContent = 'Iniciar';
+    }
+
+    demoSize.addEventListener('input', () => {
+      document.getElementById('demoSizeOut').textContent = demoSize.value;
+      resetDemo();
+    });
+    demoSpeed.addEventListener('input', () => {
+      document.getElementById('demoSpeedOut').textContent = `${demoSpeed.value} ms`;
+    });
+    document.getElementById('demoStart').addEventListener('click', startDemo);
+    document.getElementById('demoStep').addEventListener('click', () => { stopDemo(); nextDemoStep(); });
+    document.getElementById('demoReset').addEventListener('click', resetDemo);
+
+    renderBenchmarkRows();
+    updateSummary();
+    resetDemo();
+  </script>
+</body>
+</html>
