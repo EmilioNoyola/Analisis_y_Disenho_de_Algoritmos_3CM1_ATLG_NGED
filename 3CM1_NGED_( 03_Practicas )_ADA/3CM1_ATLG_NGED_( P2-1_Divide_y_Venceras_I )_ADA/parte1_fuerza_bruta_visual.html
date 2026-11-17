@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conteo de inversiones por fuerza bruta</title>
+<style>
+    :root {
+        --papel: #F5F8FC;
+        --cuadricula: #DDE7F3;
+        --hoja: #FFFFFF;
+        --tinta: #16243A;
+        --tinta-suave: #56667D;
+        --linea: #B9C6D8;
+        --azul: #1D5FD1;
+        --azul-tinte: #DCE8FB;
+        --ambar: #B77F00;
+        --ambar-tinte: #FFEFB8;
+        --rojo: #C5302A;
+        --rojo-tinte: #FBDDDA;
+        --verde: #1F8A5B;
+        --gris-tinte: #E6EBF2;
+        --letra: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+        --letra-variable: Cambria, Georgia, "Times New Roman", serif;
+        --letra-codigo: "Cascadia Code", Consolas, "Courier New", monospace;
+        --celda: 56px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background: var(--papel);
+        color: var(--tinta);
+        font-family: var(--letra);
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+    main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px 16px 48px;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 4vw, 2.3rem);
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+    }
+
+    header p {
+        margin: 8px 0 0;
+        max-width: 68ch;
+        color: var(--tinta-suave);
+    }
+
+    var {
+        font-family: var(--letra-variable);
+        font-style: italic;
+        font-size: 1.08em;
+    }
+
+    /* ---------- Entrada del arreglo ---------- */
+
+    .entrada {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 12px 16px;
+        margin: 24px 0 16px;
+    }
+
+    .entrada label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .entrada input[type="text"] {
+        width: min(340px, 78vw);
+        padding: 9px 12px;
+        border: 1.5px solid var(--linea);
+        border-radius: 6px;
+        background: var(--hoja);
+        color: var(--tinta);
+        font: inherit;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .ejemplos {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    button {
+        padding: 9px 14px;
+        border: 1.5px solid var(--tinta);
+        border-radius: 6px;
+        background: var(--hoja);
+        color: var(--tinta);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    button:hover { background: var(--gris-tinte); }
+    button:disabled { opacity: 0.4; cursor: default; }
+
+    button.principal {
+        background: var(--tinta);
+        color: #FFFFFF;
+        min-width: 124px;
+    }
+
+    button.principal:hover { background: #24395A; }
+
+    button.ejemplo {
+        border-color: var(--linea);
+        font-weight: 500;
+        padding: 7px 12px;
+        font-size: 0.9rem;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+        outline: 3px solid var(--azul);
+        outline-offset: 2px;
+    }
+
+    .error {
+        min-height: 1.5em;
+        margin: 0 0 8px;
+        color: var(--rojo);
+        font-weight: 600;
+    }
+
+    /* ---------- Distribución ---------- */
+
+    .tablero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 440px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .hoja {
+        background-color: var(--hoja);
+        background-image:
+            linear-gradient(var(--cuadricula) 1px, transparent 1px),
+            linear-gradient(90deg, var(--cuadricula) 1px, transparent 1px);
+        background-size: 24px 24px;
+        border: 1.5px solid var(--linea);
+        border-radius: 10px;
+        padding: 24px 20px;
+        overflow-x: auto;
+    }
+
+    /* ---------- Arreglo ---------- */
+
+    .arreglo {
+        display: flex;
+        gap: 6px;
+        width: max-content;
+        margin: 0 auto;
+    }
+
+    .casilla {
+        width: var(--celda);
+        text-align: center;
+    }
+
+    .casilla .indice {
+        font-size: 0.8rem;
+        color: var(--tinta-suave);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .casilla .valor {
+        display: grid;
+        place-items: center;
+        height: var(--celda);
+        border: 2px solid var(--tinta);
+        border-radius: 6px;
+        background: var(--hoja);
+        font-size: 1.35rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        transition: background-color 0.15s, border-color 0.15s;
+    }
+
+    .casilla .puntero {
+        height: 44px;
+        font-family: var(--letra-variable);
+        font-style: italic;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .casilla .puntero::before {
+        content: "▲";
+        display: block;
+        font-family: var(--letra);
+        font-style: normal;
+        font-size: 0.7rem;
+        visibility: hidden;
+    }
+
+    .casilla.es-i .puntero::before,
+    .casilla.es-j .puntero::before { visibility: visible; }
+
+    .casilla.terminada .valor { border-color: var(--linea); color: #93A1B5; }
+    .casilla.es-i .valor { background: var(--azul-tinte); border-color: var(--azul); }
+    .casilla.es-i .puntero { color: var(--azul); }
+    .casilla.es-j .valor { background: var(--ambar-tinte); border-color: var(--ambar); }
+    .casilla.es-j .puntero { color: var(--ambar); }
+    .casilla.invertida .valor { background: var(--rojo-tinte); border-color: var(--rojo); }
+
+    .mensaje {
+        min-height: 3.2em;
+        margin: 8px auto 0;
+        max-width: 60ch;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .mensaje.si { color: var(--rojo); }
+
+    /* ---------- Contadores ---------- */
+
+    .contadores {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px 40px;
+        margin: 16px 0 24px;
+    }
+
+    .contador {
+        background: var(--hoja);
+        padding: 2px 8px;
+    }
+
+    .contador b {
+        font-size: 1.9rem;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+    }
+
+    .contador.inversiones b { color: var(--rojo); }
+
+    /* ---------- Matriz de pares ---------- */
+
+    .pares {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px 32px;
+        justify-content: center;
+        align-items: start;
+    }
+
+    .pares h2 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+        background: var(--hoja);
+        width: fit-content;
+    }
+
+    .matriz {
+        display: grid;
+        gap: 3px;
+        width: max-content;
+        font-size: 0.8rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .matriz div {
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+    }
+
+    .matriz .encabezado { font-weight: 700; background: var(--hoja); }
+    .matriz .par { border: 1.5px solid var(--linea); border-radius: 4px; background: var(--hoja); }
+    .matriz .par.no { background: var(--gris-tinte); border-color: var(--gris-tinte); }
+    .matriz .par.si { background: var(--rojo); border-color: var(--rojo); }
+    .matriz .par.actual { outline: 3px solid var(--tinta); outline-offset: 1px; }
+
+    .explicacion {
+        max-width: 34ch;
+        font-size: 0.95rem;
+        background: var(--hoja);
+    }
+
+    .explicacion p { margin: 0 0 10px; }
+
+    .leyenda {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .leyenda li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+
+    .leyenda span {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        border: 1.5px solid var(--linea);
+        flex: none;
+    }
+
+    .leyenda .si { background: var(--rojo); border-color: var(--rojo); }
+    .leyenda .no { background: var(--gris-tinte); border-color: var(--gris-tinte); }
+
+    .lista-pares {
+        margin: 20px auto 0;
+        max-width: 70ch;
+        text-align: center;
+        background: var(--hoja);
+        width: fit-content;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .lista-pares b { color: var(--rojo); }
+
+    /* ---------- Controles ---------- */
+
+    .controles {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .deslizador {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .deslizador input { accent-color: var(--tinta); }
+    .deslizador.avance { flex: 1 1 260px; }
+    .deslizador.avance input { flex: 1; min-width: 120px; }
+    #textoPaso { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .atajos {
+        margin: 10px 0 0;
+        font-size: 0.875rem;
+        color: var(--tinta-suave);
+    }
+
+    kbd {
+        font-family: var(--letra-codigo);
+        font-size: 0.85em;
+        padding: 1px 6px;
+        border: 1px solid var(--linea);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        background: var(--hoja);
+    }
+
+    /* ---------- Panel de código ---------- */
+
+    .codigo {
+        background: var(--tinta);
+        color: #E7EEF8;
+        border-radius: 10px;
+        padding: 18px 0 20px;
+        position: sticky;
+        top: 16px;
+    }
+
+    .codigo h2 {
+        margin: 0 20px 10px;
+        font-size: 1rem;
+    }
+
+    .codigo pre {
+        margin: 0;
+        font-family: var(--letra-codigo);
+        font-size: 0.76rem;
+        line-height: 1.75;
+        overflow-x: auto;
+    }
+
+    .codigo pre span {
+        display: block;
+        padding: 0 20px;
+        border-left: 4px solid transparent;
+        white-space: pre;
+    }
+
+    .codigo pre span.activa {
+        background: #2B4368;
+        border-left-color: #FFD34D;
+        color: #FFFFFF;
+    }
+
+    .variables {
+        margin: 16px 20px 0;
+        padding-top: 14px;
+        border-top: 1px solid #3A4E6E;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 14px;
+        font-family: var(--letra-codigo);
+        font-size: 0.85rem;
+    }
+
+    .variables dt { color: #A9BBD4; }
+    .variables dd { margin: 0; font-weight: 700; }
+
+    @media (max-width: 940px) {
+        .tablero { grid-template-columns: minmax(0, 1fr); }
+        .codigo { position: static; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .casilla .valor { transition: none; }
+    }
+</style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>Conteo de inversiones por fuerza bruta</h1>
+        <p>Cada elemento se compara con todos los que tiene a su derecha. Si el de la izquierda es mayor, ese par es una inversión.</p>
+    </header>
+
+    <form class="entrada" id="formulario">
+        <div>
+            <label for="campoArreglo">Arreglo (de 2 a 12 números enteros separados por comas)</label>
+            <input type="text" id="campoArreglo" value="5, 4, 3, 2, 1" autocomplete="off">
+        </div>
+        <button type="submit">Usar este arreglo</button>
+        <div class="ejemplos" aria-label="Arreglos de ejemplo">
+            <button type="button" class="ejemplo" data-arreglo="1, 3, 4, 2, 5">Ranking de canciones</button>
+            <button type="button" class="ejemplo" data-arreglo="1, 5, 4, 8, 10, 2, 6, 9, 3, 7">Ejemplo de 10</button>
+            <button type="button" class="ejemplo" data-arreglo="8, 7, 6, 5, 4, 3, 2, 1">Peor caso</button>
+            <button type="button" class="ejemplo" data-arreglo="1, 2, 3, 4, 5, 6, 7, 8">Ordenado</button>
+            <button type="button" class="ejemplo" id="botonAzar">Al azar</button>
+        </div>
+    </form>
+    <p class="error" id="error" role="alert"></p>
+
+    <div class="tablero">
+        <section aria-label="Animación del algoritmo">
+            <div class="hoja">
+                <div class="arreglo" id="arreglo"></div>
+                <p class="mensaje" id="mensaje" aria-live="polite"></p>
+
+                <div class="contadores">
+                    <div class="contador">Comparaciones <b id="comparaciones">0</b> de <span id="totalPares">0</span></div>
+                    <div class="contador inversiones">Inversiones <b id="inversiones">0</b></div>
+                </div>
+
+                <div class="pares">
+                    <div>
+                        <h2>Todos los pares (<var>i</var>, <var>j</var>)</h2>
+                        <div class="matriz" id="matriz"></div>
+                    </div>
+                    <div class="explicacion">
+                        <p>Cada casilla es una comparación. El renglón es el elemento de la izquierda y la columna el de la derecha.</p>
+                        <p>Siempre se llenan <b id="formula"></b> casillas, sin importar el orden de los datos: la mitad de un cuadro de <var>n</var> × <var>n</var>.</p>
+                        <ul class="leyenda">
+                            <li><span class="si"></span> Par invertido</li>
+                            <li><span class="no"></span> Par en orden</li>
+                            <li><span></span> Falta por comparar</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p class="lista-pares" id="listaPares"></p>
+            </div>
+
+            <div class="controles">
+                <button type="button" class="principal" id="botonReproducir">Reproducir</button>
+                <button type="button" id="botonAnterior">Paso anterior</button>
+                <button type="button" id="botonSiguiente">Paso siguiente</button>
+                <button type="button" id="botonReiniciar">Reiniciar</button>
+                <label class="deslizador">Velocidad
+                    <input type="range" id="velocidad" min="1" max="10" value="4">
+                </label>
+                <label class="deslizador avance"><span id="textoPaso">Paso 0 de 0</span>
+                    <input type="range" id="avance" min="0" max="0" value="0">
+                </label>
+            </div>
+            <p class="atajos">Teclado: <kbd>Espacio</kbd> reproduce o pausa, <kbd>←</kbd> y <kbd>→</kbd> avanzan paso a paso, <kbd>R</kbd> reinicia.</p>
+        </section>
+
+        <aside class="codigo" aria-label="Código que se está ejecutando">
+            <h2>Línea que se está ejecutando</h2>
+            <pre id="codigo"></pre>
+            <dl class="variables" id="variables"></dl>
+        </aside>
+    </div>
+</main>
+
+<script>
+/* =====================================================================
+   1. ALGORITMO
+   Es la misma función de la versión base. La única diferencia es que,
+   en lugar de solo contar, guarda una "foto" de cada comparación en la
+   lista pasos. La animación consiste en mostrar esas fotos en orden.
+   ===================================================================== */
+
+function generarPasos(arreglo) {
+    const pasos = [];
+    const pares = [];
+    let inversiones = 0;
+    let comparaciones = 0;
+
+    pasos.push({
+        tipo: "inicio", i: -1, j: -1, lineas: [1],
+        comparaciones: 0, inversiones: 0, pares: [],
+        mensaje: "El contador de inversiones empieza en 0."
+    });
+
+    for (let i = 0; i < arreglo.length; i++) {
+        for (let j = i + 1; j < arreglo.length; j++) {
+            const invertido = arreglo[i] > arreglo[j];
+            comparaciones++;
+
+            if (invertido) {
+                inversiones++;
+                pares.push({ i: i, j: j });
+            }
+
+            pasos.push({
+                tipo: "compara", i: i, j: j, invertido: invertido,
+                lineas: invertido ? [4, 5] : [4],
+                comparaciones: comparaciones, inversiones: inversiones,
+                pares: pares.slice(),
+                mensaje: invertido
+                    ? "¿" + arreglo[i] + " > " + arreglo[j] + "? Sí. El par (" + arreglo[i] + ", " + arreglo[j] + ") está invertido: se suma 1."
+                    : "¿" + arreglo[i] + " > " + arreglo[j] + "? No. El par (" + arreglo[i] + ", " + arreglo[j] + ") está en orden."
+            });
+        }
+    }
+
+    pasos.push({
+        tipo: "fin", i: -1, j: -1, lineas: [9],
+        comparaciones: comparaciones, inversiones: inversiones, pares: pares.slice(),
+        mensaje: "Terminó. Se hicieron " + comparaciones + " comparaciones y se encontraron " + inversiones + " inversiones."
+    });
+
+    return pasos;
+}
+
+/* =====================================================================
+   2. ESTADO DE LA ANIMACIÓN
+   ===================================================================== */
+
+const LINEAS_CODIGO = [
+    "function contarInversiones(arreglo) {",
+    "    let inversiones = 0;",
+    "    for (let i = 0; i < arreglo.length; i++) {",
+    "        for (let j = i + 1; j < arreglo.length; j++) {",
+    "            if (arreglo[i] > arreglo[j]) {",
+    "                inversiones++;",
+    "            }",
+    "        }",
+    "    }",
+    "    return inversiones;",
+    "}"
+];
+
+const ESPERAS = [1500, 1100, 800, 600, 450, 320, 220, 150, 90, 50];
+
+let arreglo = [];
+let pasos = [];
+let actual = 0;
+let temporizador = null;
+
+const $ = function (id) { return document.getElementById(id); };
+
+/* =====================================================================
+   3. DIBUJO
+   Cada función toma el paso actual y actualiza una parte de la página.
+   ===================================================================== */
+
+function dibujarArreglo(paso) {
+    const contenedor = $("arreglo");
+    contenedor.innerHTML = "";
+
+    arreglo.forEach(function (valor, k) {
+        const casilla = document.createElement("div");
+        casilla.className = "casilla";
+
+        if (k === paso.i) casilla.classList.add("es-i");
+        if (k === paso.j) casilla.classList.add("es-j");
+        if (paso.tipo === "compara" && k < paso.i) casilla.classList.add("terminada");
+        if (paso.invertido && (k === paso.i || k === paso.j)) casilla.classList.add("invertida");
+
+        let letra = "";
+        if (k === paso.i) letra = "i";
+        if (k === paso.j) letra = "j";
+
+        casilla.innerHTML =
+            '<div class="indice">' + k + '</div>' +
+            '<div class="valor">' + valor + '</div>' +
+            '<div class="puntero">' + letra + '</div>';
+        contenedor.appendChild(casilla);
+    });
+}
+
+function dibujarMatriz(paso) {
+    const n = arreglo.length;
+    const matriz = $("matriz");
+    matriz.style.gridTemplateColumns = "repeat(" + n + ", 26px)";
+    matriz.innerHTML = "";
+
+    const estados = {};
+    for (let p = 1; p <= actual; p++) {
+        if (pasos[p].tipo === "compara") {
+            estados[pasos[p].i + "-" + pasos[p].j] = pasos[p].invertido ? "si" : "no";
+        }
+    }
+
+    const agregar = function (clase, texto) {
+        const celda = document.createElement("div");
+        celda.className = clase;
+        celda.textContent = texto;
+        matriz.appendChild(celda);
+    };
+
+    agregar("", "");
+    for (let j = 1; j < n; j++) agregar("encabezado", arreglo[j]);
+
+    for (let i = 0; i < n - 1; i++) {
+        agregar("encabezado", arreglo[i]);
+        for (let j = 1; j < n; j++) {
+            if (j <= i) {
+                agregar("", "");
+            } else {
+                let clase = "par " + (estados[i + "-" + j] || "");
+                if (paso.i === i && paso.j === j) clase += " actual";
+                agregar(clase, "");
+            }
+        }
+    }
+}
+
+function dibujarCodigo(paso) {
+    $("codigo").innerHTML = LINEAS_CODIGO.map(function (linea, numero) {
+        const activa = paso.lineas.indexOf(numero) !== -1 ? ' class="activa"' : "";
+        return "<span" + activa + ">" + linea.replace(/</g, "&lt;") + "</span>";
+    }).join("");
+
+    const hayPar = paso.tipo === "compara";
+    $("variables").innerHTML =
+        "<dt>i</dt><dd>" + (hayPar ? paso.i : "-") + "</dd>" +
+        "<dt>j</dt><dd>" + (hayPar ? paso.j : "-") + "</dd>" +
+        "<dt>arreglo[i]</dt><dd>" + (hayPar ? arreglo[paso.i] : "-") + "</dd>" +
+        "<dt>arreglo[j]</dt><dd>" + (hayPar ? arreglo[paso.j] : "-") + "</dd>" +
+        "<dt>inversiones</dt><dd>" + paso.inversiones + "</dd>";
+}
+
+function dibujar() {
+    const paso = pasos[actual];
+    const n = arreglo.length;
+    const total = n * (n - 1) / 2;
+
+    dibujarArreglo(paso);
+    dibujarMatriz(paso);
+    dibujarCodigo(paso);
+
+    $("mensaje").textContent = paso.mensaje;
+    $("mensaje").className = "mensaje" + (paso.invertido ? " si" : "");
+    $("comparaciones").textContent = paso.comparaciones;
+    $("inversiones").textContent = paso.inversiones;
+    $("totalPares").textContent = total;
+    $("formula").textContent = n + " × " + (n - 1) + " / 2 = " + total;
+
+    $("listaPares").innerHTML = paso.pares.length === 0
+        ? "Pares invertidos: ninguno todavía."
+        : "Pares invertidos: <b>" + paso.pares.map(function (par) {
+            return arreglo[par.i] + "-" + arreglo[par.j];
+        }).join(", ") + "</b>";
+
+    $("textoPaso").textContent = "Paso " + actual + " de " + (pasos.length - 1);
+    $("avance").value = actual;
+    $("botonAnterior").disabled = actual === 0;
+    $("botonSiguiente").disabled = actual === pasos.length - 1;
+    $("botonReproducir").textContent = temporizador ? "Pausar" : (actual === pasos.length - 1 ? "Repetir" : "Reproducir");
+}
+
+/* =====================================================================
+   4. CONTROLES
+   ===================================================================== */
+
+function pausar() {
+    clearTimeout(temporizador);
+    temporizador = null;
+}
+
+function irA(indice) {
+    actual = Math.max(0, Math.min(pasos.length - 1, indice));
+    dibujar();
+}
+
+function avanzarSolo() {
+    if (actual >= pasos.length - 1) {
+        pausar();
+        dibujar();
+        return;
+    }
+    irA(actual + 1);
+    temporizador = setTimeout(avanzarSolo, ESPERAS[$("velocidad").value - 1]);
+}
+
+function alternarReproduccion() {
+    if (temporizador) {
+        pausar();
+        dibujar();
+        return;
+    }
+    if (actual === pasos.length - 1) actual = 0;
+    temporizador = setTimeout(avanzarSolo, 0);
+    dibujar();
+}
+
+function cargarArreglo(texto) {
+    const partes = texto.split(",").map(function (parte) { return parte.trim(); });
+    const sonEnteros = partes.every(function (parte) { return /^-?\d{1,3}$/.test(parte); });
+
+    if (!sonEnteros) {
+        $("error").textContent = "Escribe solo números enteros de hasta 3 cifras separados por comas, por ejemplo: 3, 1, 2.";
+        return;
+    }
+    if (partes.length < 2 || partes.length > 12) {
+        $("error").textContent = "El arreglo debe tener entre 2 y 12 números. Escribiste " + partes.length + ".";
+        return;
+    }
+
+    $("error").textContent = "";
+    $("campoArreglo").value = partes.join(", ");
+    pausar();
+    arreglo = partes.map(Number);
+    document.documentElement.style.setProperty("--celda", arreglo.length > 9 ? "44px" : "54px");
+    pasos = generarPasos(arreglo);
+    actual = 0;
+    $("avance").max = pasos.length - 1;
+    dibujar();
+}
+
+$("formulario").addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    cargarArreglo($("campoArreglo").value);
+});
+
+document.querySelectorAll("[data-arreglo]").forEach(function (boton) {
+    boton.addEventListener("click", function () { cargarArreglo(boton.dataset.arreglo); });
+});
+
+$("botonAzar").addEventListener("click", function () {
+    const valores = [1, 2, 3, 4, 5, 6, 7, 8];
+    for (let k = valores.length - 1; k > 0; k--) {
+        const otro = Math.floor(Math.random() * (k + 1));
+        const temporal = valores[k];
+        valores[k] = valores[otro];
+        valores[otro] = temporal;
+    }
+    cargarArreglo(valores.join(", "));
+});
+
+$("botonReproducir").addEventListener("click", alternarReproduccion);
+$("botonAnterior").addEventListener("click", function () { pausar(); irA(actual - 1); });
+$("botonSiguiente").addEventListener("click", function () { pausar(); irA(actual + 1); });
+$("botonReiniciar").addEventListener("click", function () { pausar(); irA(0); });
+$("avance").addEventListener("input", function () { pausar(); irA(Number($("avance").value)); });
+
+document.addEventListener("keydown", function (evento) {
+    if (evento.target.tagName === "INPUT") return;
+    if (evento.target.tagName === "BUTTON" && evento.key === " ") return;
+
+    if (evento.key === " ") {
+        evento.preventDefault();
+        alternarReproduccion();
+    } else if (evento.key === "ArrowRight") {
+        evento.preventDefault();
+        pausar();
+        irA(actual + 1);
+    } else if (evento.key === "ArrowLeft") {
+        evento.preventDefault();
+        pausar();
+        irA(actual - 1);
+    } else if (evento.key === "r" || evento.key === "R") {
+        pausar();
+        irA(0);
+    }
+});
+
+cargarArreglo($("campoArreglo").value);
+</script>
+</body>
+</html>

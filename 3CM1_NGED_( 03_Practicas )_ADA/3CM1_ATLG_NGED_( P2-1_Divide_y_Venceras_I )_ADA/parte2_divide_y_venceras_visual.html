@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conteo de inversiones con Divide y Vencerás</title>
+<style>
+    :root {
+        --papel: #F5F8FC;
+        --cuadricula: #DDE7F3;
+        --hoja: #FFFFFF;
+        --tinta: #16243A;
+        --tinta-suave: #56667D;
+        --linea: #B9C6D8;
+        --azul: #1D5FD1;
+        --azul-tinte: #DCE8FB;
+        --ambar: #B77F00;
+        --ambar-tinte: #FFEFB8;
+        --rojo: #C5302A;
+        --rojo-tinte: #FBDDDA;
+        --verde: #1F8A5B;
+        --gris-tinte: #E6EBF2;
+        --letra: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+        --letra-variable: Cambria, Georgia, "Times New Roman", serif;
+        --letra-codigo: "Cascadia Code", Consolas, "Courier New", monospace;
+        --columna: 54px;
+        --renglon: 96px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background: var(--papel);
+        color: var(--tinta);
+        font-family: var(--letra);
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+    main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px 16px 48px;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 4vw, 2.3rem);
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+    }
+
+    header p {
+        margin: 8px 0 0;
+        max-width: 68ch;
+        color: var(--tinta-suave);
+    }
+
+    var {
+        font-family: var(--letra-variable);
+        font-style: italic;
+        font-size: 1.08em;
+    }
+
+    /* ---------- Entrada del arreglo ---------- */
+
+    .entrada {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 12px 16px;
+        margin: 24px 0 16px;
+    }
+
+    .entrada label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .entrada input[type="text"] {
+        width: min(340px, 78vw);
+        padding: 9px 12px;
+        border: 1.5px solid var(--linea);
+        border-radius: 6px;
+        background: var(--hoja);
+        color: var(--tinta);
+        font: inherit;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .ejemplos {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    button {
+        padding: 9px 14px;
+        border: 1.5px solid var(--tinta);
+        border-radius: 6px;
+        background: var(--hoja);
+        color: var(--tinta);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    button:hover { background: var(--gris-tinte); }
+    button:disabled { opacity: 0.4; cursor: default; }
+
+    button.principal {
+        background: var(--tinta);
+        color: #FFFFFF;
+        min-width: 124px;
+    }
+
+    button.principal:hover { background: #24395A; }
+
+    button.ejemplo {
+        border-color: var(--linea);
+        font-weight: 500;
+        padding: 7px 12px;
+        font-size: 0.9rem;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+        outline: 3px solid var(--azul);
+        outline-offset: 2px;
+    }
+
+    .error {
+        min-height: 1.5em;
+        margin: 0 0 8px;
+        color: var(--rojo);
+        font-weight: 600;
+    }
+
+    /* ---------- Distribución ---------- */
+
+    .tablero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 440px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .hoja {
+        background-color: var(--hoja);
+        background-image:
+            linear-gradient(var(--cuadricula) 1px, transparent 1px),
+            linear-gradient(90deg, var(--cuadricula) 1px, transparent 1px);
+        background-size: 24px 24px;
+        border: 1.5px solid var(--linea);
+        border-radius: 10px;
+        padding: 24px 20px;
+        overflow-x: auto;
+    }
+
+    /* ---------- Árbol de divisiones ---------- */
+
+    .arbol {
+        display: grid;
+        grid-template-columns: repeat(var(--n), var(--columna));
+        grid-auto-rows: var(--renglon);
+        width: max-content;
+        margin: 0 auto;
+    }
+
+    .nodo {
+        padding: 0 4px;
+        display: grid;
+        grid-template-rows: 20px 46px 26px;
+    }
+
+    .nodo .rol {
+        font-family: var(--letra-variable);
+        font-style: italic;
+        font-weight: 700;
+        font-size: 1.05rem;
+        line-height: 20px;
+        padding-left: 2px;
+    }
+
+    .nodo .rol span { background: var(--hoja); padding: 0 3px; }
+
+    .nodo .celdas { display: flex; }
+
+    .celda {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--tinta);
+        margin-left: -2px;
+        background: var(--hoja);
+        font-size: 1.2rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        transition: background-color 0.15s, border-color 0.15s;
+    }
+
+    .celda:first-child { margin-left: 0; border-radius: 6px 0 0 6px; }
+    .celda:last-child { border-radius: 0 6px 6px 0; }
+    .celda:only-child { border-radius: 6px; }
+
+    .nodo .pie {
+        display: flex;
+        font-size: 0.8rem;
+        line-height: 26px;
+        white-space: nowrap;
+    }
+
+    .nodo .pie .puntero {
+        flex: 1;
+        text-align: center;
+        font-family: var(--letra-variable);
+        font-style: italic;
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+
+    .nodo .pie .cuenta {
+        margin: 0 auto;
+        padding: 0 5px;
+        background: var(--hoja);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .nodo .pie .cuenta b { color: var(--rojo); }
+
+    /* Estados de un nodo */
+    .nodo.dividido .celda { border-color: var(--linea); color: #93A1B5; }
+    .nodo.usado .celda { border-color: #CFDAE8; color: #A3B0C2; }
+    .nodo.usado .pie { color: #93A1B5; }
+    .nodo.usado .pie .cuenta b { color: inherit; }
+    .nodo.resuelto .celda { border-color: var(--verde); background: #E2F4EA; }
+    .nodo.activo.nuevo .celda { outline: 3px solid var(--tinta); outline-offset: -1px; }
+
+    /* Papeles durante una mezcla */
+    .nodo.rol-a .celda { border-color: var(--azul); background: var(--azul-tinte); }
+    .nodo.rol-a .rol, .nodo.rol-a .puntero { color: var(--azul); }
+    .nodo.rol-b .celda { border-color: var(--ambar); background: var(--ambar-tinte); }
+    .nodo.rol-b .rol, .nodo.rol-b .puntero { color: var(--ambar); }
+    .nodo.rol-c .celda { border-color: var(--verde); background: #E2F4EA; }
+    .nodo.rol-c .rol { color: var(--verde); }
+    .nodo.rol-c .celda.vacia { background: var(--hoja); border-style: dashed; border-color: var(--linea); }
+    .nodo.rol-c .celda.nueva { background: var(--verde); color: #FFFFFF; }
+    .nodo .celda.gastada { background: var(--hoja); color: #B7C2D2; }
+    .nodo .celda.sale { outline: 3px solid var(--tinta); outline-offset: -1px; z-index: 1; }
+    .nodo.rol-a .celda.roja { background: var(--rojo-tinte); border-color: var(--rojo); color: var(--rojo); z-index: 1; }
+
+    .mensaje {
+        min-height: 4.6em;
+        margin: 12px auto 0;
+        max-width: 62ch;
+        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+
+    .mensaje span { background: var(--hoja); }
+    .mensaje.si { color: var(--rojo); }
+
+    /* ---------- Contadores ---------- */
+
+    .contadores {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px 40px;
+        margin: 12px 0 16px;
+    }
+
+    .contador { background: var(--hoja); padding: 2px 8px; }
+    .contador b { font-size: 1.9rem; font-variant-numeric: tabular-nums; line-height: 1; }
+    .contador.inversiones b { color: var(--rojo); }
+    .contador small { color: var(--tinta-suave); font-size: 0.875rem; }
+
+    .leyenda {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px 20px;
+        margin: 0 auto;
+        padding: 2px 8px;
+        width: fit-content;
+        background: var(--hoja);
+        font-size: 0.9rem;
+    }
+
+    .leyenda li { display: flex; align-items: center; gap: 6px; }
+    .leyenda span { width: 16px; height: 16px; border-radius: 3px; border: 2px solid; flex: none; }
+    .leyenda .a { background: var(--azul-tinte); border-color: var(--azul); }
+    .leyenda .b { background: var(--ambar-tinte); border-color: var(--ambar); }
+    .leyenda .c { background: #E2F4EA; border-color: var(--verde); }
+    .leyenda .r { background: var(--rojo-tinte); border-color: var(--rojo); }
+
+    .lista-pares {
+        margin: 16px auto 0;
+        max-width: 70ch;
+        text-align: center;
+        background: var(--hoja);
+        width: fit-content;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .lista-pares b { color: var(--rojo); }
+
+    /* ---------- Controles ---------- */
+
+    .controles {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .deslizador {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .deslizador input { accent-color: var(--tinta); }
+    .deslizador.avance { flex: 1 1 260px; }
+    .deslizador.avance input { flex: 1; min-width: 120px; }
+    #textoPaso { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .atajos {
+        margin: 10px 0 0;
+        font-size: 0.875rem;
+        color: var(--tinta-suave);
+    }
+
+    kbd {
+        font-family: var(--letra-codigo);
+        font-size: 0.85em;
+        padding: 1px 6px;
+        border: 1px solid var(--linea);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        background: var(--hoja);
+    }
+
+    /* ---------- Panel de código ---------- */
+
+    .codigo {
+        background: var(--tinta);
+        color: #E7EEF8;
+        border-radius: 10px;
+        padding: 18px 0 20px;
+        position: sticky;
+        top: 16px;
+    }
+
+    .codigo h2 {
+        margin: 0 20px 10px;
+        font-size: 1rem;
+    }
+
+    .codigo pre {
+        margin: 0;
+        font-family: var(--letra-codigo);
+        font-size: 0.74rem;
+        line-height: 1.55;
+        overflow-x: auto;
+    }
+
+    .codigo pre span {
+        display: block;
+        padding: 0 20px;
+        border-left: 4px solid transparent;
+        white-space: pre;
+    }
+
+    .codigo pre span.activa {
+        background: #2B4368;
+        border-left-color: #FFD34D;
+        color: #FFFFFF;
+    }
+
+    .variables {
+        margin: 16px 20px 0;
+        padding-top: 14px;
+        border-top: 1px solid #3A4E6E;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 14px;
+        font-family: var(--letra-codigo);
+        font-size: 0.85rem;
+    }
+
+    .variables dt { color: #A9BBD4; }
+    .variables dd { margin: 0; font-weight: 700; }
+
+    @media (max-width: 940px) {
+        .tablero { grid-template-columns: minmax(0, 1fr); }
+        .codigo { position: static; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .celda { transition: none; }
+    }
+</style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>Conteo de inversiones con Divide y Vencerás</h1>
+        <p>El arreglo se parte en mitades hasta llegar a un solo elemento. Al regresar, cada par de mitades se mezcla en orden y en esa mezcla se cuentan las inversiones.</p>
+    </header>
+
+    <form class="entrada" id="formulario">
+        <div>
+            <label for="campoArreglo">Arreglo (de 2 a 12 números enteros separados por comas)</label>
+            <input type="text" id="campoArreglo" value="1, 5, 4, 8, 10, 2, 6, 9, 3, 7" autocomplete="off">
+        </div>
+        <button type="submit">Usar este arreglo</button>
+        <div class="ejemplos" aria-label="Arreglos de ejemplo">
+            <button type="button" class="ejemplo" data-arreglo="1, 5, 4, 8, 10, 2, 6, 9, 3, 7">Ejemplo de 10</button>
+            <button type="button" class="ejemplo" data-arreglo="1, 3, 4, 2, 5">Ranking de canciones</button>
+            <button type="button" class="ejemplo" data-arreglo="8, 7, 6, 5, 4, 3, 2, 1">Peor caso</button>
+            <button type="button" class="ejemplo" data-arreglo="1, 2, 3, 4, 5, 6, 7, 8">Ordenado</button>
+            <button type="button" class="ejemplo" id="botonAzar">Al azar</button>
+        </div>
+    </form>
+    <p class="error" id="error" role="alert"></p>
+
+    <div class="tablero">
+        <section aria-label="Animación del algoritmo">
+            <div class="hoja">
+                <div class="arbol" id="arbol"></div>
+                <p class="mensaje" id="mensaje" aria-live="polite"></p>
+
+                <div class="contadores">
+                    <div class="contador inversiones">Inversiones <b id="inversiones">0</b></div>
+                    <div class="contador">Comparaciones <b id="comparaciones">0</b> <small id="comparacionesBruta"></small></div>
+                </div>
+
+                <ul class="leyenda">
+                    <li><span class="a"></span> Mitad <var>A</var></li>
+                    <li><span class="b"></span> Mitad <var>B</var></li>
+                    <li><span class="c"></span> Ordenado</li>
+                    <li><span class="r"></span> Invertidos con el que pasa</li>
+                </ul>
+
+                <p class="lista-pares" id="listaPares"></p>
+            </div>
+
+            <div class="controles">
+                <button type="button" class="principal" id="botonReproducir">Reproducir</button>
+                <button type="button" id="botonAnterior">Paso anterior</button>
+                <button type="button" id="botonSiguiente">Paso siguiente</button>
+                <button type="button" id="botonReiniciar">Reiniciar</button>
+                <label class="deslizador">Velocidad
+                    <input type="range" id="velocidad" min="1" max="10" value="4">
+                </label>
+                <label class="deslizador avance"><span id="textoPaso">Paso 0 de 0</span>
+                    <input type="range" id="avance" min="0" max="0" value="0">
+                </label>
+            </div>
+            <p class="atajos">Teclado: <kbd>Espacio</kbd> reproduce o pausa, <kbd>←</kbd> y <kbd>→</kbd> avanzan paso a paso, <kbd>R</kbd> reinicia.</p>
+        </section>
+
+        <aside class="codigo" aria-label="Código que se está ejecutando">
+            <h2>Línea que se está ejecutando</h2>
+            <pre id="codigo"></pre>
+            <dl class="variables" id="variables"></dl>
+        </aside>
+    </div>
+</main>
+
+<script>
+/* =====================================================================
+   1. ALGORITMO
+   Son las mismas funciones ordenaYCuenta y mezclaYCuenta de la versión
+   base. La diferencia es que cada subarreglo se guarda como un "nodo"
+   para poder dibujarlo, y que después de cada acción se toma una "foto"
+   del estado completo. La animación muestra esas fotos en orden.
+   ===================================================================== */
+
+function generarPasos(arreglo) {
+    const pasos = [];
+    const nodos = [];
+    const pares = [];
+    let total = 0;
+    let comparaciones = 0;
+
+    function texto(valores) {
+        return "[" + valores.join(", ") + "]";
+    }
+
+    function crearNodo(valores, inicio, nivel) {
+        nodos.push({
+            inicio: inicio,
+            nivel: nivel,
+            valores: valores.slice(),
+            visible: false,
+            fase: "nuevo",
+            rol: "",
+            puntero: -1,
+            cuenta: ""
+        });
+        return nodos.length - 1;
+    }
+
+    function foto(datos) {
+        const paso = {
+            nodos: JSON.parse(JSON.stringify(nodos)),
+            total: total,
+            comparaciones: comparaciones,
+            pares: pares.slice(),
+            activo: -1,
+            lineas: [],
+            variables: null,
+            invertidos: [],
+            sale: "",
+            nuevoEnC: -1,
+            hayInversion: false
+        };
+        pasos.push(Object.assign(paso, datos));
+    }
+
+    function mezclaYCuenta(idPadre, idA, idB) {
+        const A = nodos[idA].valores;
+        const B = nodos[idB].valores;
+        const C = [];
+        let i = 0;
+        let j = 0;
+        let inversiones = 0;
+
+        const padre = nodos[idPadre];
+        const vacio = A.concat(B).map(function () { return null; });
+
+        function actualizar() {
+            nodos[idA].puntero = i;
+            nodos[idB].puntero = j;
+            padre.valores = C.concat(vacio.slice(C.length));
+        }
+
+        function variables() {
+            return {
+                i: i,
+                j: j,
+                ai: i < A.length ? A[i] : "-",
+                bj: j < B.length ? B[j] : "-",
+                inversiones: inversiones
+            };
+        }
+
+        nodos[idA].rol = "A";
+        nodos[idB].rol = "B";
+        padre.rol = "C";
+        padre.fase = "mezcla";
+        actualizar();
+        foto({
+            activo: idPadre, lineas: ["llamaMezcla", "creaC"], variables: variables(),
+            mensaje: "Combina: A = " + texto(A) + " y B = " + texto(B) + " ya están ordenados. Se mezclan en C comparando el primero que queda de cada uno."
+        });
+
+        while (i < A.length && j < B.length) {
+            comparaciones++;
+
+            if (A[i] <= B[j]) {
+                C.push(A[i]);
+                padre.valores = C.concat(vacio.slice(C.length));
+                foto({
+                    activo: idPadre, lineas: ["compara", "pasaA"], variables: variables(),
+                    sale: "A", nuevoEnC: C.length - 1,
+                    mensaje: A[i] + " ≤ " + B[j] + ": el " + A[i] + " pasa a C. No hay inversión, porque tampoco es mayor que los que quedan en B."
+                });
+                i++;
+            } else {
+                const restantes = A.slice(i);
+                const indices = restantes.map(function (valor, k) { return i + k; });
+
+                C.push(B[j]);
+                inversiones += A.length - i;
+                total += A.length - i;
+                restantes.forEach(function (valor) { pares.push(valor + "-" + B[j]); });
+                padre.valores = C.concat(vacio.slice(C.length));
+
+                foto({
+                    activo: idPadre, lineas: ["compara", "pasaB", "suma"], variables: variables(),
+                    sale: "B", nuevoEnC: C.length - 1, invertidos: indices, hayInversion: true,
+                    mensaje: A[i] + " > " + B[j] + ": el " + B[j] + " pasa a C y está invertido con " +
+                        (restantes.length === 1
+                            ? "el elemento que queda en A (" + restantes[0] + "). Se suma 1."
+                            : "los " + restantes.length + " elementos que quedan en A (" + restantes.join(", ") + "). Se suman " + restantes.length + ".")
+                });
+                j++;
+            }
+            actualizar();
+        }
+
+        if (i < A.length) {
+            const sobrantes = A.slice(i);
+            while (i < A.length) {
+                C.push(A[i]);
+                i++;
+            }
+            actualizar();
+            foto({
+                activo: idPadre, lineas: ["sobraA"], variables: variables(),
+                mensaje: "B se terminó. Lo que queda de A (" + sobrantes.join(", ") + ") pasa a C tal cual. Ya no se suman inversiones."
+            });
+        }
+
+        if (j < B.length) {
+            const sobrantes = B.slice(j);
+            while (j < B.length) {
+                C.push(B[j]);
+                j++;
+            }
+            actualizar();
+            foto({
+                activo: idPadre, lineas: ["sobraB"], variables: variables(),
+                mensaje: "A se terminó. Lo que queda de B (" + sobrantes.join(", ") + ") pasa a C tal cual. Ya no se suman inversiones."
+            });
+        }
+
+        nodos[idA].rol = "";
+        nodos[idB].rol = "";
+        nodos[idA].fase = "usado";
+        nodos[idB].fase = "usado";
+        nodos[idA].puntero = -1;
+        nodos[idB].puntero = -1;
+        padre.rol = "";
+        padre.fase = "resuelto";
+        padre.valores = C;
+
+        return inversiones;
+    }
+
+    function ordenaYCuenta(id) {
+        const nodo = nodos[id];
+        const L = nodo.valores;
+        nodo.visible = true;
+
+        if (L.length <= 1) {
+            nodo.fase = "resuelto";
+            nodo.cuenta = "<b>0</b>";
+            foto({
+                activo: id, lineas: ["casoBase", "regresaBase"],
+                mensaje: "Caso base: " + texto(L) + " tiene un solo elemento. No puede formar pares, así que tiene 0 inversiones y ya está ordenado."
+            });
+            return 0;
+        }
+
+        const mitad = Math.floor(L.length / 2);
+        const idA = crearNodo(L.slice(0, mitad), nodo.inicio, nodo.nivel + 1);
+        const idB = crearNodo(L.slice(mitad), nodo.inicio + mitad, nodo.nivel + 1);
+
+        nodo.fase = "dividido";
+        nodos[idA].visible = true;
+        nodos[idB].visible = true;
+        foto({
+            activo: id, lineas: ["mitad"],
+            mensaje: "Divide: " + texto(L) + " se parte en A = " + texto(nodos[idA].valores) + " y B = " + texto(nodos[idB].valores) + "."
+        });
+
+        const rA = ordenaYCuenta(idA);
+        const rB = ordenaYCuenta(idB);
+        const rAB = mezclaYCuenta(id, idA, idB);
+
+        nodo.cuenta = rA + " + " + rB + " + " + rAB + " = <b>" + (rA + rB + rAB) + "</b>";
+        foto({
+            activo: id, lineas: ["regresa", "suma3", "ordenado"],
+            mensaje: (id === 0 ? "Terminó. " : "") + texto(nodo.valores) + " quedó ordenado. Inversiones: " +
+                rA + " de A + " + rB + " de B + " + rAB + " de la mezcla = " + (rA + rB + rAB) + "."
+        });
+
+        return rA + rB + rAB;
+    }
+
+    const raiz = crearNodo(arreglo, 0, 0);
+    nodos[raiz].visible = true;
+    foto({
+        activo: raiz, lineas: ["funcion"],
+        mensaje: "Se van a contar las inversiones de " + texto(arreglo) + ". Primero se parte en mitades hasta llegar a arreglos de un solo elemento."
+    });
+    ordenaYCuenta(raiz);
+
+    return pasos;
+}
+
+/* =====================================================================
+   2. ESTADO DE LA ANIMACIÓN
+   ===================================================================== */
+
+// Cada línea del código lleva una clave para poder resaltarla.
+const LINEAS_CODIGO = [
+    ["funcion",     "function ordenaYCuenta(L) {"],
+    ["casoBase",    "    if (L.length <= 1) {"],
+    ["regresaBase", "        return { inversiones: 0, ordenado: L };"],
+    ["",            "    }"],
+    ["mitad",       "    const mitad = Math.floor(L.length / 2);"],
+    ["mitad",       "    const A = ordenaYCuenta(L.slice(0, mitad));"],
+    ["mitad",       "    const B = ordenaYCuenta(L.slice(mitad));"],
+    ["llamaMezcla", "    const AB = mezclaYCuenta(A.ordenado, B.ordenado);"],
+    ["regresa",     "    return {"],
+    ["suma3",       "        inversiones: A.inversiones + B.inversiones + AB.inversiones,"],
+    ["ordenado",    "        ordenado: AB.ordenado"],
+    ["",            "    };"],
+    ["",            "}"],
+    ["",            ""],
+    ["",            "function mezclaYCuenta(A, B) {"],
+    ["creaC",       "    const C = [];"],
+    ["",            "    let i = 0;"],
+    ["",            "    let j = 0;"],
+    ["",            "    let inversiones = 0;"],
+    ["",            "    while (i < A.length && j < B.length) {"],
+    ["compara",     "        if (A[i] <= B[j]) {"],
+    ["pasaA",       "            C.push(A[i]);"],
+    ["pasaA",       "            i++;"],
+    ["",            "        } else {"],
+    ["pasaB",       "            C.push(B[j]);"],
+    ["pasaB",       "            j++;"],
+    ["suma",        "            inversiones += A.length - i;"],
+    ["",            "        }"],
+    ["",            "    }"],
+    ["sobraA",      "    while (i < A.length) {"],
+    ["sobraA",      "        C.push(A[i]);"],
+    ["sobraA",      "        i++;"],
+    ["",            "    }"],
+    ["sobraB",      "    while (j < B.length) {"],
+    ["sobraB",      "        C.push(B[j]);"],
+    ["sobraB",      "        j++;"],
+    ["",            "    }"],
+    ["",            "    return { inversiones: inversiones, ordenado: C };"],
+    ["",            "}"]
+];
+
+const ESPERAS = [1800, 1400, 1100, 850, 650, 480, 340, 230, 140, 70];
+
+let arreglo = [];
+let pasos = [];
+let actual = 0;
+let temporizador = null;
+
+const $ = function (id) { return document.getElementById(id); };
+
+/* =====================================================================
+   3. DIBUJO
+   ===================================================================== */
+
+function dibujarArbol(paso) {
+    const arbol = $("arbol");
+    arbol.innerHTML = "";
+
+    paso.nodos.forEach(function (nodo, id) {
+        if (!nodo.visible) return;
+
+        const elemento = document.createElement("div");
+        elemento.className = "nodo " + nodo.fase;
+        if (nodo.rol) elemento.classList.add("rol-" + nodo.rol.toLowerCase());
+        if (id === paso.activo) elemento.classList.add("activo");
+        elemento.style.gridColumn = (nodo.inicio + 1) + " / span " + nodo.valores.length;
+        elemento.style.gridRow = nodo.nivel + 1;
+
+        const celdas = nodo.valores.map(function (valor, k) {
+            let clase = "celda";
+            if (valor === null) clase += " vacia";
+            if (nodo.rol === "C" && k === paso.nuevoEnC) clase += " nueva";
+            if (nodo.rol === "A" || nodo.rol === "B") {
+                if (k < nodo.puntero) clase += " gastada";
+                if (k === nodo.puntero && paso.sale === nodo.rol) clase += " sale";
+            }
+            if (nodo.rol === "A" && paso.invertidos.indexOf(k) !== -1) clase += " roja";
+            return '<div class="' + clase + '">' + (valor === null ? "" : valor) + "</div>";
+        }).join("");
+
+        let pie = "";
+        if (nodo.rol === "A" || nodo.rol === "B") {
+            pie = nodo.valores.map(function (valor, k) {
+                return '<span class="puntero">' + (k === nodo.puntero ? (nodo.rol === "A" ? "i" : "j") : "") + "</span>";
+            }).join("");
+        } else if (nodo.cuenta) {
+            pie = '<span class="cuenta">' + nodo.cuenta + "</span>";
+        }
+
+        elemento.innerHTML =
+            '<div class="rol">' + (nodo.rol ? "<span>" + nodo.rol + "</span>" : "") + "</div>" +
+            '<div class="celdas">' + celdas + "</div>" +
+            '<div class="pie">' + pie + "</div>";
+        arbol.appendChild(elemento);
+    });
+}
+
+function dibujarCodigo(paso) {
+    $("codigo").innerHTML = LINEAS_CODIGO.map(function (linea) {
+        const activa = linea[0] !== "" && paso.lineas.indexOf(linea[0]) !== -1 ? ' class="activa"' : "";
+        return "<span" + activa + ">" + (linea[1].replace(/</g, "&lt;") || " ") + "</span>";
+    }).join("");
+
+    const v = paso.variables;
+    $("variables").innerHTML =
+        "<dt>i</dt><dd>" + (v ? v.i : "-") + "</dd>" +
+        "<dt>j</dt><dd>" + (v ? v.j : "-") + "</dd>" +
+        "<dt>A[i]</dt><dd>" + (v ? v.ai : "-") + "</dd>" +
+        "<dt>B[j]</dt><dd>" + (v ? v.bj : "-") + "</dd>" +
+        "<dt>inversiones de esta mezcla</dt><dd>" + (v ? v.inversiones : "-") + "</dd>" +
+        "<dt>inversiones en total</dt><dd>" + paso.total + "</dd>";
+}
+
+function dibujar() {
+    const paso = pasos[actual];
+    const n = arreglo.length;
+
+    dibujarArbol(paso);
+    dibujarCodigo(paso);
+
+    $("mensaje").innerHTML = "<span>" + paso.mensaje + "</span>";
+    $("mensaje").className = "mensaje" + (paso.hayInversion ? " si" : "");
+    $("inversiones").textContent = paso.total;
+    $("comparaciones").textContent = paso.comparaciones;
+    $("comparacionesBruta").textContent = "(la fuerza bruta hace " + (n * (n - 1) / 2) + ")";
+
+    $("listaPares").innerHTML = paso.pares.length === 0
+        ? "Pares invertidos: ninguno todavía."
+        : "Pares invertidos: <b>" + paso.pares.join(", ") + "</b>";
+
+    $("textoPaso").textContent = "Paso " + actual + " de " + (pasos.length - 1);
+    $("avance").value = actual;
+    $("botonAnterior").disabled = actual === 0;
+    $("botonSiguiente").disabled = actual === pasos.length - 1;
+    $("botonReproducir").textContent = temporizador ? "Pausar" : (actual === pasos.length - 1 ? "Repetir" : "Reproducir");
+}
+
+/* =====================================================================
+   4. CONTROLES
+   ===================================================================== */
+
+function pausar() {
+    clearTimeout(temporizador);
+    temporizador = null;
+}
+
+function irA(indice) {
+    actual = Math.max(0, Math.min(pasos.length - 1, indice));
+    dibujar();
+}
+
+function avanzarSolo() {
+    if (actual >= pasos.length - 1) {
+        pausar();
+        dibujar();
+        return;
+    }
+    irA(actual + 1);
+    temporizador = setTimeout(avanzarSolo, ESPERAS[$("velocidad").value - 1]);
+}
+
+function alternarReproduccion() {
+    if (temporizador) {
+        pausar();
+        dibujar();
+        return;
+    }
+    if (actual === pasos.length - 1) actual = 0;
+    temporizador = setTimeout(avanzarSolo, 0);
+    dibujar();
+}
+
+function cargarArreglo(texto) {
+    const partes = texto.split(",").map(function (parte) { return parte.trim(); });
+    const sonEnteros = partes.every(function (parte) { return /^-?\d{1,3}$/.test(parte); });
+
+    if (!sonEnteros) {
+        $("error").textContent = "Escribe solo números enteros de hasta 3 cifras separados por comas, por ejemplo: 3, 1, 2.";
+        return;
+    }
+    if (partes.length < 2 || partes.length > 12) {
+        $("error").textContent = "El arreglo debe tener entre 2 y 12 números. Escribiste " + partes.length + ".";
+        return;
+    }
+
+    $("error").textContent = "";
+    $("campoArreglo").value = partes.join(", ");
+    pausar();
+    arreglo = partes.map(Number);
+    pasos = generarPasos(arreglo);
+    actual = 0;
+    $("avance").max = pasos.length - 1;
+
+    const niveles = Math.max.apply(null, pasos[pasos.length - 1].nodos.map(function (nodo) { return nodo.nivel; })) + 1;
+    $("arbol").style.setProperty("--n", arreglo.length);
+    $("arbol").style.gridTemplateRows = "repeat(" + niveles + ", var(--renglon))";
+    document.documentElement.style.setProperty("--columna", arreglo.length > 9 ? "50px" : "58px");
+    dibujar();
+}
+
+$("formulario").addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    cargarArreglo($("campoArreglo").value);
+});
+
+document.querySelectorAll("[data-arreglo]").forEach(function (boton) {
+    boton.addEventListener("click", function () { cargarArreglo(boton.dataset.arreglo); });
+});
+
+$("botonAzar").addEventListener("click", function () {
+    const valores = [1, 2, 3, 4, 5, 6, 7, 8];
+    for (let k = valores.length - 1; k > 0; k--) {
+        const otro = Math.floor(Math.random() * (k + 1));
+        const temporal = valores[k];
+        valores[k] = valores[otro];
+        valores[otro] = temporal;
+    }
+    cargarArreglo(valores.join(", "));
+});
+
+$("botonReproducir").addEventListener("click", alternarReproduccion);
+$("botonAnterior").addEventListener("click", function () { pausar(); irA(actual - 1); });
+$("botonSiguiente").addEventListener("click", function () { pausar(); irA(actual + 1); });
+$("botonReiniciar").addEventListener("click", function () { pausar(); irA(0); });
+$("avance").addEventListener("input", function () { pausar(); irA(Number($("avance").value)); });
+
+document.addEventListener("keydown", function (evento) {
+    if (evento.target.tagName === "INPUT") return;
+    if (evento.target.tagName === "BUTTON" && evento.key === " ") return;
+
+    if (evento.key === " ") {
+        evento.preventDefault();
+        alternarReproduccion();
+    } else if (evento.key === "ArrowRight") {
+        evento.preventDefault();
+        pausar();
+        irA(actual + 1);
+    } else if (evento.key === "ArrowLeft") {
+        evento.preventDefault();
+        pausar();
+        irA(actual - 1);
+    } else if (evento.key === "r" || evento.key === "R") {
+        pausar();
+        irA(0);
+    }
+});
+
+cargarArreglo($("campoArreglo").value);
+</script>
+</body>
+</html>
