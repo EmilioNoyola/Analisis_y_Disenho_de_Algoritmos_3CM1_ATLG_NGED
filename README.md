@@ -44,10 +44,11 @@ El programa describe el alcance de la asignatura. Las carpetas siguientes muestr
 |---|---|
 | [Ejercicios](01_ejercicios/) · `01_ejercicios` | Subarreglos, matrices, inversiones, divide y vencerás y LCS. |
 | [Tareas](02_tareas/) · `02_tareas` | Problema del número mínimo de monedas. |
-| [Prácticas](03_practicas/) · `03_practicas` | Medición de tiempos en C/JavaScript, inversiones y planificación de eventos. |
+| [Prácticas](03_practicas/) · `03_practicas` | Medición de tiempos, inversiones, planificación de eventos y mochila 0/1 con programación dinámica. |
 | [Guías](04_guias/) · `04_guias` | Primer y segundo parcial; repaso resuelto. |
-| [Material de clase](05_material_clase/) · `05_material_clase` | Heaps y colas de prioridad, Huffman y Dijkstra. |
+| [Material de clase](05_material_clase/) · `05_material_clase` | Heaps, colas de prioridad, Huffman, Dijkstra y programación dinámica. |
 | [Exámenes de referencia](06_examenes/) · `06_examenes` | Dos exámenes pasados resueltos. |
+| [Apuntes](07_apuntes/) · `07_apuntes` | Cuaderno de clase. |
 
 Los números de actividad conservan la identificación de las entregas; las guías se distinguen por el prefijo `g` y las prácticas por `p` o `act`, según la materia.
 
