@@ -18,6 +18,7 @@ Implementaciones en C y JavaScript, mediciones experimentales y reportes sobre e
 |---|---|
 | [Ver las prácticas](03_practicas/) | Código, enunciados y reportes por actividad. |
 | [Preparar el segundo parcial](04_guias/g03_repaso_resuelto_segundo_parcial.pdf) | Repaso resuelto para trabajar junto a las guías anteriores. |
+| [Preparar el tercer parcial](04_guias/g04_tercer_parcial.pdf) | Programación dinámica, complejidad, reducciones y problemas NP-completos. |
 | [Revisar LCS](01_ejercicios/ejercicio_rapido_lcs/) | Enunciado y solución de subsecuencia común más larga. |
 
 ## Programa de estudios
@@ -45,7 +46,7 @@ El programa describe el alcance de la asignatura. Las carpetas siguientes muestr
 | [Ejercicios](01_ejercicios/) · `01_ejercicios` | Subarreglos, matrices, inversiones, divide y vencerás y LCS. |
 | [Tareas](02_tareas/) · `02_tareas` | Problema del número mínimo de monedas. |
 | [Prácticas](03_practicas/) · `03_practicas` | Medición de tiempos, inversiones, planificación de eventos y mochila 0/1 con programación dinámica. |
-| [Guías](04_guias/) · `04_guias` | Primer y segundo parcial; repaso resuelto. |
+| [Guías](04_guias/) · `04_guias` | Primer, segundo y tercer parcial; repaso resuelto del segundo parcial. |
 | [Material de clase](05_material_clase/) · `05_material_clase` | Heaps, colas de prioridad, Huffman, Dijkstra y programación dinámica. |
 | [Exámenes de referencia](06_examenes/) · `06_examenes` | Dos exámenes pasados resueltos. |
 | [Apuntes](07_apuntes/) · `07_apuntes` | Cuaderno de clase. |
